@@ -1,6 +1,6 @@
 # PRUNEnLEARN 
 
-Welcome to PRUNEnLEARN! This system provides a low-cost, curriculum-aligned educational assistant that ingests textbook PDFs, pulls highly relevant context, and significantly reduces API token costs using **ScaleDown** before generating answers with Gemini.
+PRUNEnLEARN! This system provides a low-cost, curriculum-aligned educational assistant that ingests textbook PDFs, pulls highly relevant context, and significantly reduces API token costs using **ScaleDown** before generating answers with Gemini.
 
 ## 🚀 Setup Steps
 
@@ -41,5 +41,3 @@ When a 1,000-token chunk of context is pulled from a textbook, much of it might 
 4. **Run Optimized**: Click **Run Optimized Mode**. 
 5. **Compare**: View the Metrics Panel table at the bottom. You will see the percentage reduction in tokens, and the real-time calculated cost savings compared to the Baseline mode side-by-side!
 
-### Screenshots
-*(Include screenshots of the Metrics table comparing Baseline vs. Optimized modes here.)*
