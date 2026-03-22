@@ -41,3 +41,4 @@ When a 1,000-token chunk of context is pulled from a textbook, much of it might 
 4. **Run Optimized**: Click **Run Optimized Mode**. 
 5. **Compare**: View the Metrics Panel table at the bottom. You will see the percentage reduction in tokens, and the real-time calculated cost savings compared to the Baseline mode side-by-side!
 
+<img width="1161" height="777" alt="image" src="https://github.com/user-attachments/assets/063e0eb5-c3f9-4b3e-88a2-568fe609595b" />
