@@ -1,0 +1,7 @@
+Flask
+google-generativeai
+PyPDF2
+requests
+scikit-learn
+numpy
+tiktoken

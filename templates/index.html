@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PRUNEnLEARN</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>PRUNEnLEARN</h1>
+        </header>
+
+        <section class="card">
+            <h2>1. Document Setup</h2>
+            <div class="upload-section">
+                <input type="file" id="pdfFileInput" accept="application/pdf" />
+                <button id="uploadBtn" class="btn primary">Upload Textbook</button>
+            </div>
+            <div id="uploadStatus" class="status-msg"></div>
+        </section>
+
+        <section class="card">
+            <h2>2. Ask a Question</h2>
+            <div class="query-section">
+                <textarea id="queryInput" placeholder="Enter your question here (e.g., 'Explain photosynthesis')." rows="3"></textarea>
+                
+                <div class="controls">
+                    <div class="control-group">
+                        <label for="answerType">Answer Type:</label>
+                        <select id="answerType">
+                            <option value="detailed">Detailed</option>
+                            <option value="simple">Simple</option>
+                            <option value="exam">Exam Style</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button id="runBaselineBtn" class="btn secondary">Run Baseline Mode</button>
+                    <button id="runOptimizedBtn" class="btn primary">Run Optimized Mode</button>
+                </div>
+            </div>
+        </section>
+
+        <section class="card">
+            <h2>3. Tutor Output</h2>
+            <div class="output-tabs">
+                <button class="tab-btn active" data-target="baseline-output">Baseline Output</button>
+                <button class="tab-btn" data-target="optimized-output">Optimized Output</button>
+            </div>
+            
+            <div id="baseline-output" class="tab-content active">
+                <div class="answer-box">
+                    <h3>Answer</h3>
+                    <div id="baselineAnswer">Run baseline query to see results.</div>
+                </div>
+            </div>
+
+            <div id="optimized-output" class="tab-content">
+                <div class="answer-box">
+                    <h3>Answer (ScaleDown)</h3>
+                    <div id="optimizedAnswer">Run optimized query to see results.</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="card">
+            <h2>4. Performance Metrics</h2>
+            <table class="metrics-table">
+                <thead>
+                    <tr>
+                        <th>Metric</th>
+                        <th>Baseline Mode</th>
+                        <th>Optimized Mode (ScaleDown)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Context Tokens</td>
+                        <td id="m-base-tokens">-</td>
+                        <td id="m-opt-tokens">-</td>
+                    </tr>
+                    <tr>
+                        <td>Reduction</td>
+                        <td>0%</td>
+                        <td id="m-opt-reduction" class="highlight">-</td>
+                    </tr>
+                    <tr>
+                        <td>Estimated Cost</td>
+                        <td id="m-base-cost">-</td>
+                        <td id="m-opt-cost">-</td>
+                    </tr>
+                    <tr>
+                        <td>Latency</td>
+                        <td id="m-base-latency">-</td>
+                        <td id="m-opt-latency">-</td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="savings-banner">
+                Total Savings with ScaleDown: <span id="m-opt-savings">0.00</span> per query
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // Tab switching logic
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById(btn.dataset.target).classList.add('active');
+            });
+        });
+
+        // Upload Logic
+        document.getElementById('uploadBtn').addEventListener('click', async () => {
+            const fileInput = document.getElementById('pdfFileInput');
+            const statusDiv = document.getElementById('uploadStatus');
+            
+            if (!fileInput.files[0]) {
+                statusDiv.textContent = "Please select a file first.";
+                statusDiv.className = "status-msg error";
+                return;
+            }
+
+            statusDiv.textContent = "Uploading and processing... This may take a minute.";
+            statusDiv.className = "status-msg info";
+            
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    statusDiv.textContent = data.message;
+                    statusDiv.className = "status-msg success";
+                } else {
+                    statusDiv.textContent = data.error;
+                    statusDiv.className = "status-msg error";
+                }
+            } catch (err) {
+                statusDiv.textContent = "Upload failed.";
+                statusDiv.className = "status-msg error";
+            }
+        });
+
+        // Query Logic
+        async function runQuery(mode) {
+            const query = document.getElementById('queryInput').value;
+            const answerType = document.getElementById('answerType').value;
+            
+            if (!query) {
+                alert("Please enter a query.");
+                return;
+            }
+
+            const isBaseline = mode === 'baseline';
+            const answerDiv = document.getElementById(isBaseline ? 'baselineAnswer' : 'optimizedAnswer');
+            const btn = document.getElementById(isBaseline ? 'runBaselineBtn' : 'runOptimizedBtn');
+            const originalText = btn.textContent;
+            
+            btn.textContent = "Processing...";
+            btn.disabled = true;
+            answerDiv.innerHTML = "<em>Generating response...</em>";
+
+            try {
+                const response = await fetch('/query', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query, mode, answer_type: answerType })
+                });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    answerDiv.innerHTML = data.answer.replace(/\n/g, '<br>');
+                    updateMetrics(data.metrics, mode);
+                } else {
+                    answerDiv.innerHTML = `<span class="error">Error: ${data.error}</span>`;
+                }
+            } catch (err) {
+                answerDiv.innerHTML = `<span class="error">Request failed.</span>`;
+            } finally {
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        function updateMetrics(metrics, mode) {
+            if (mode === 'baseline') {
+                document.getElementById('m-base-tokens').textContent = metrics.original_tokens;
+                document.getElementById('m-base-cost').textContent = `₹${metrics.cost_before}`;
+                document.getElementById('m-base-latency').textContent = `${metrics.latency}s`;
+            } else {
+                document.getElementById('m-opt-tokens').textContent = metrics.compressed_tokens;
+                document.getElementById('m-opt-reduction').textContent = `${metrics.reduction}%`;
+                document.getElementById('m-opt-cost').textContent = `₹${metrics.cost_after}`;
+                document.getElementById('m-opt-latency').textContent = `${metrics.latency}s`;
+                document.getElementById('m-opt-savings').textContent = `₹${metrics.savings}`;
+            }
+        }
+
+        document.getElementById('runBaselineBtn').addEventListener('click', () => runQuery('baseline'));
+        document.getElementById('runOptimizedBtn').addEventListener('click', () => runQuery('optimized'));
+    </script>
+</body>
+</html>
